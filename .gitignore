@@ -1,0 +1,7 @@
+__pycache__/
+.claude
+*.py[cod]
+*$py.class
+CLAUDE.md
+.env
+*.log
