@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from reddit_client import RedditClient
 from sentiment_analyzer import SentimentAnalyzer
+from export_utils import DataExporter
 
 
 def main():
@@ -13,6 +14,7 @@ def main():
     parser.add_argument('--sort', choices=['hot', 'new', 'top'], default='hot', help='Sort posts by')
     parser.add_argument('--comments', '-c', action='store_true', help='Also analyze comments')
     parser.add_argument('--output', '-o', help='Output file path (JSON format)')
+    parser.add_argument('--format', choices=['json', 'csv', 'report'], default='json', help='Output format')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
     
     args = parser.parse_args()
@@ -20,6 +22,7 @@ def main():
     try:
         reddit_client = RedditClient()
         analyzer = SentimentAnalyzer()
+        exporter = DataExporter()
         
         print(f"Fetching {args.limit} posts from r/{args.subreddit} (sorted by {args.sort})")
         posts = reddit_client.get_subreddit_posts(args.subreddit, args.limit, args.sort)
@@ -60,9 +63,18 @@ def main():
         
         # Output results
         if args.output:
-            with open(args.output, 'w') as f:
-                json.dump(results, f, indent=2)
-            print(f"Results saved to {args.output}")
+            if args.format == 'json':
+                message = exporter.export_to_json(results, args.output)
+            elif args.format == 'csv':
+                message = exporter.export_to_csv(results, args.output)
+                if comment_results:
+                    comment_output = args.output.replace('.csv', '_comments.csv')
+                    comment_message = exporter.export_comments_to_csv(results, comment_output)
+                    message += f"\n{comment_message}"
+            elif args.format == 'report':
+                message = exporter.create_summary_report(results, args.output)
+            
+            print(message)
         
         # Print summary to console
         print(f"\n--- Analysis Summary for r/{args.subreddit} ---")
