@@ -5,6 +5,7 @@ from datetime import datetime
 from reddit_client import RedditClient
 from sentiment_analyzer import SentimentAnalyzer
 from export_utils import DataExporter
+from utils import setup_logging, validate_output_path
 
 
 def main():
@@ -19,6 +20,14 @@ def main():
     
     args = parser.parse_args()
     
+    # Setup logging
+    logger = setup_logging(args.verbose)
+    logger.info("Starting Reddit sentiment analysis")
+    
+    # Validate output path
+    if args.output:
+        args.output = validate_output_path(args.output, args.format)
+    
     try:
         reddit_client = RedditClient()
         analyzer = SentimentAnalyzer()
@@ -28,6 +37,7 @@ def main():
         posts = reddit_client.get_subreddit_posts(args.subreddit, args.limit, args.sort)
         
         if not posts:
+            logger.error("No posts found")
             print("No posts found.")
             sys.exit(1)
         
@@ -100,9 +110,19 @@ def main():
                 print(f"Score: {post['score']}, Sentiment: {post['overall_sentiment']['sentiment']}")
                 print(f"Polarity: {post['overall_sentiment']['polarity']}")
         
+    except KeyboardInterrupt:
+        logger.info("Analysis interrupted by user")
+        print("\nAnalysis interrupted by user")
+        sys.exit(0)
     except Exception as e:
+        logger.error(f"Analysis failed: {str(e)}", exc_info=True)
         print(f"Error: {str(e)}")
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
         sys.exit(1)
+    finally:
+        logger.info("Reddit sentiment analysis completed")
 
 
 if __name__ == "__main__":
