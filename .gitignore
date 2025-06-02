@@ -1,7 +1,11 @@
 __pycache__/
-.claude
 *.py[cod]
 *$py.class
-CLAUDE.md
+.claude
+*.so
 .env
 *.log
+CLAUDE.md
+*.egg-info/
+dist/
+build/
